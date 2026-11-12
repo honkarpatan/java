@@ -424,7 +424,7 @@ function lspList() {
     { key: 'enableLspCompletion', text: 'LSP completion', checkbox: true },
     { key: 'enableHover', text: 'Hover', checkbox: true },
     { key: 'enableGoToDefinition', text: 'Go to definition', checkbox: true },
-    { key: 'enableFindReferences', text: 'Find references', checkbox: true },
+    { key: 'enableFindReferences', text: 'Go to references (peek)', checkbox: true },
     { key: 'enableRename', text: 'Rename', checkbox: true },
     { key: 'enableInlayHints', text: 'Inlay hints', checkbox: true },
   ];

@@ -14,6 +14,10 @@ Modular folders (same idea as Python Debugger plugin):
 - `intel/` — JDTLS, go-to-def, references
 - `autoImport/`, `snippets/`, `formatter/`, `deps/`, `ui/`
 
+## Go to References
+
+Tools menu / command `Java: Go to References` opens a VS Code style peek popup (editor left, reference lines right). Edits in the popup sync to the main editor. Implemented by the reusable `src/modules/peekReferences` module (see its README) so C++/PHP plugins can reuse it.
+
 ## LSP
 
 Settings → **LSP (JDTLS)**:
