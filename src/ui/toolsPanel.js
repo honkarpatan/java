@@ -1,5 +1,6 @@
 import { getSettings } from '../core/settings.js';
 import { isJavaFile } from '../utils/javaFiles.js';
+import { addRelativePathComment, describeRelativePath } from '../utils/packageFromPath.js';
 import { executeGoToDefinition } from '../intel/goToDefinition.js';
 import { executeFindReferences } from '../intel/findReferences.js';
 import { lintNow } from '../linter/javacLinter.js';
@@ -18,6 +19,7 @@ const TOOL_ACTIONS = [
   ['runInline', 'Run · inline logs'],
   ['lintNow', 'Lint now (javac + imports)'],
   ['format', 'Format document'],
+  ['addRelativePath', 'Add relative path to Top'],
   ['organize', 'Organize imports'],
   ['autoImport', 'Auto import (stdlib only)'],
   ['gotoDef', 'Go to Definition'],
@@ -47,6 +49,16 @@ async function handleAction(id) {
       await lintNow();
     } catch (e) {
       toast('Lint: ' + (e?.message || e), 2500);
+    }
+    return;
+  }
+  if (id === 'addRelativePath') {
+    try {
+      const info = describeRelativePath();
+      console.log('[JavaTools] relative path', info);
+      addRelativePathComment();
+    } catch (e) {
+      toast('Path: ' + (e?.message || e), 2000);
     }
     return;
   }

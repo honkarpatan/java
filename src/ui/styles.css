@@ -384,3 +384,105 @@
   color: color-mix(in srgb, var(--warning-color, #cca700) 70%, var(--secondary-text-color, #888));
 }
 
+
+
+/* ── Dependencies page ── */
+.java-deps-page .java-deps-btn,
+.java-deps-body .java-deps-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid rgba(127, 127, 127, 0.4);
+  border-radius: 3px !important;
+  background: rgba(127, 127, 127, 0.12);
+  color: inherit;
+}
+.java-deps-page .java-deps-btn.primary,
+.java-deps-body .java-deps-btn.primary {
+  background: rgba(33, 150, 243, 0.22);
+  border-color: rgba(33, 150, 243, 0.55);
+}
+.java-deps-page input[type="search"],
+.java-deps-body input[type="search"] {
+  border-radius: 3px !important;
+}
+.java-deps-status {
+  border-radius: 3px !important;
+}
+
+.java-deps-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.java-deps-results {
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: 45vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(127, 127, 127, 0.2);
+  border-radius: 3px;
+  padding: 4px 8px;
+  margin-top: 8px;
+}
+
+
+/* Problems search filter */
+.java-prob-search-toggle {
+  border: 1px solid rgba(127,127,127,.35);
+  background: rgba(127,127,127,.12);
+  color: inherit;
+  border-radius: 3px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  margin-right: 4px;
+}
+.java-prob-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(127,127,127,.2);
+}
+.java-prob-search-bar[hidden] {
+  display: none !important;
+}
+.java-prob-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 3px;
+  border: 1px solid rgba(127,127,127,.35);
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+}
+.java-prob-search-count {
+  font-size: 11px;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+.java-prob-search-clear {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 3px;
+}
+.java-problems-item.java-prob-search-hit {
+  outline: 1px solid rgba(255, 193, 7, 0.55);
+  background: rgba(255, 193, 7, 0.08);
+}
+.java-problem-line-flash {
+  position: absolute;
+  background: rgba(255, 213, 79, 0.28);
+}

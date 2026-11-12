@@ -91,6 +91,12 @@ export async function writeToTerminal(script) {
   return term;
 }
 
+/**
+ * Run a shell bootstrap in the shared interactive terminal.
+ * Caller must ensure the bootstrap does NOT consume stdin via a pipe
+ * (e.g. use `echo b64 | base64 -d > /tmp/run.sh && sh /tmp/run.sh`
+ * so Java/python child processes still see the real TTY for Scanner/input).
+ */
 export async function runInTerminal(bootstrapCmd, { clearScreen = true } = {}) {
   const term = await getSharedTerminal();
   if (!term?.id && !term) {

@@ -49,14 +49,18 @@ function btn(label, onClick, primary) {
 }
 
 export async function openDepsPage() {
-  const back = el('span', { className: 'icon arrow_back' });
+  const back = el('span', {
+    className: 'icon arrow_back',
+    style: 'pointer-events:auto;cursor:pointer;',
+  });
+  back.dataset.action = 'back';
   const page = Page('Java Dependencies', { lead: back });
   try {
     page.classList.add('detail-settings-page', 'java-deps-page');
   } catch (_) {}
   const body = el('div', {
     className: 'main java-deps-body',
-    style: 'overflow:auto;height:100%;padding:12px;box-sizing:border-box;',
+    style: 'overflow:hidden;height:100%;padding:12px;box-sizing:border-box;display:flex;flex-direction:column;',
   });
   try {
     page.appendBody(body);
@@ -64,22 +68,91 @@ export async function openDepsPage() {
     page.appendChild?.(body);
   }
 
+  let closed = false;
   const close = () => {
-    try { page.hide?.(); } catch (_) {}
-    try { page.parentElement?.removeChild(page); } catch (_) {}
+    if (closed) return;
+    closed = true;
     try { actionStack.remove(STACK_ID); } catch (_) {}
+    try { page.hide?.(); } catch (_) {}
+    try { page.remove?.(); } catch (_) {}
+    try {
+      if (page.parentElement) page.parentElement.removeChild(page);
+    } catch (_) {}
+    try {
+      // Acode global stack pop fallback
+      if (actionStack?.pop && actionStack?.has?.(STACK_ID) === false) {
+        /* already removed */
+      }
+    } catch (_) {}
   };
-  back.onclick = close;
+  const onBack = (e) => {
+    try { e?.preventDefault?.(); e?.stopPropagation?.(); } catch (_) {}
+    close();
+  };
+  back.onclick = onBack;
+  back.addEventListener('click', onBack, true);
+  back.addEventListener('touchend', onBack, true);
+  try {
+    page.onclick = (e) => {
+      if (e?.target?.closest?.('[data-action="back"]')) onBack(e);
+    };
+  } catch (_) {}
   try {
     if (actionStack?.has?.(STACK_ID)) actionStack.remove(STACK_ID);
     actionStack.push({ id: STACK_ID, action: close });
   } catch (_) {}
 
+
+  // Inject page styles (border-radius ≤ 3px)
+  if (!document.getElementById('java-deps-style')) {
+    const st = document.createElement('style');
+    st.id = 'java-deps-style';
+    st.textContent = `
+.java-deps-page .java-deps-btn,
+.java-deps-body .java-deps-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 6px 12px; font-size: 12px; cursor: pointer;
+  border: 1px solid rgba(127,127,127,.4);
+  border-radius: 3px !important;
+  background: rgba(127,127,127,.12); color: inherit;
+}
+.java-deps-page .java-deps-btn.primary,
+.java-deps-body .java-deps-btn.primary {
+  background: rgba(33,150,243,.22);
+  border-color: rgba(33,150,243,.55);
+}
+.java-deps-page input[type="search"],
+.java-deps-body input[type="search"] {
+  border-radius: 3px !important;
+  padding: 8px 10px;
+  border: 1px solid rgba(127,127,127,.35);
+  background: transparent; color: inherit; font-size: 13px;
+  flex: 1; min-width: 0;
+}
+.java-deps-status {
+  font-size: 11px; white-space: pre-wrap; opacity: .85;
+  margin: 0 0 10px; padding: 8px;
+  border-radius: 3px !important;
+  background: rgba(127,127,127,.12);
+}
+.java-deps-results {
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: 45vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.java-deps-results p, .java-deps-list p { font-size: 12px; opacity: .75; }
+.java-deps-body { display: flex; flex-direction: column; overflow: hidden; }
+`;
+    document.head.appendChild(st);
+  }
+
   // ── JDK section ──
   body.appendChild(el('h3', { textContent: 'JDK', style: 'margin:0 0 8px;font-size:15px;' }));
   const jdkStatus = el('pre', {
     className: 'java-deps-status',
-    style: 'font-size:11px;white-space:pre-wrap;opacity:.85;margin:0 0 10px;padding:8px;border-radius:6px;background:rgba(127,127,127,.12);',
+    style: 'font-size:11px;white-space:pre-wrap;opacity:.85;margin:0 0 10px;padding:8px;border-radius:3px;background:rgba(127,127,127,.12);',
     textContent: 'Tap Check…',
   });
   body.appendChild(jdkStatus);
@@ -146,20 +219,26 @@ export async function openDepsPage() {
     type: 'search',
     placeholder: 'e.g. guava, gson, org.json',
     style:
-      'flex:1;padding:8px 10px;border-radius:8px;border:1px solid rgba(127,127,127,.35);background:transparent;color:inherit;font-size:13px;',
+      'flex:1;padding:8px 10px;border-radius:3px;border:1px solid rgba(127,127,127,.35);background:transparent;color:inherit;font-size:13px;',
   });
-  const results = el('div', { className: 'java-deps-results' });
+  const results = el('div', {
+    className: 'java-deps-results',
+    style: 'flex:1 1 auto;min-height:120px;max-height:45vh;overflow-y:auto;-webkit-overflow-scrolling:touch;margin-top:8px;border:1px solid rgba(127,127,127,.2);border-radius:3px;padding:4px 8px;',
+  });
   searchRow.appendChild(input);
   searchRow.appendChild(
     btn('Search', async () => {
       const q = input.value.trim();
       if (!q) return toast('Enter a query', 1200);
-      results.innerHTML = '<p style="opacity:.7;font-size:12px">Searching…</p>';
+      results.innerHTML = '<p class="java-deps-searching" style="opacity:.7;font-size:12px">Searching…</p>';
       try {
         const docs = await searchMaven(q, 15);
         results.innerHTML = '';
         if (!docs.length) {
-          results.appendChild(el('p', { textContent: 'No results', style: 'opacity:.7;font-size:12px;' }));
+          results.appendChild(el('p', {
+            textContent: 'No results (check network / Maven Central)',
+            style: 'opacity:.7;font-size:12px;',
+          }));
           return;
         }
         for (const d of docs) {
@@ -189,6 +268,10 @@ export async function openDepsPage() {
         }
       } catch (e) {
         results.innerHTML = '';
+        results.appendChild(el('p', {
+          textContent: 'Search failed: ' + String(e?.message || e).slice(0, 120),
+          style: 'opacity:.85;font-size:12px;color:#e57373;',
+        }));
         toast('Search failed: ' + (e?.message || e), 2500);
       }
     }, true)

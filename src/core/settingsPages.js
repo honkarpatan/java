@@ -246,6 +246,7 @@ function openPage(title, listFn, stackId) {
   const back = document.createElement('span');
   back.className = 'icon arrow_back';
   back.dataset.action = 'back';
+  back.style.cssText = 'pointer-events:auto;cursor:pointer;';
   const page = Page(title, { lead: back });
   try {
     page.classList.add('detail-settings-page', 'java-tools-settings-page');
@@ -275,7 +276,13 @@ function openPage(title, listFn, stackId) {
     }
   };
 
-  back.onclick = close;
+  const onBack = (e) => {
+    try { e?.preventDefault?.(); e?.stopPropagation?.(); } catch (_) {}
+    close();
+  };
+  back.onclick = onBack;
+  back.addEventListener('click', onBack, true);
+  back.addEventListener('touchend', onBack, true);
   try {
     if (actionStack?.has?.(stackId)) actionStack.remove(stackId);
     actionStack.push({ id: stackId, action: close });
@@ -344,12 +351,14 @@ function runnerList() {
     { key: 'runInClearScreen', text: 'Clear terminal on run', checkbox: true },
     { key: 'enableInlineRunLogs', text: 'Show inline run logs', checkbox: true },
     { key: 'feedChipsInTerminal', text: 'Feed chip values in terminal', checkbox: true },
-    { key: 'termShowCompileInfo', text: 'Terminal: show [compile]', checkbox: true },
-    { key: 'termShowFilePath', text: 'Terminal: show [file]', checkbox: true },
-    { key: 'termShowCommand', text: 'Terminal: show [cmd]', checkbox: true },
-    { key: 'termShowRunBanner', text: 'Terminal: show [run]', checkbox: true },
-    { key: 'termShowTiming', text: 'Terminal: show timing', checkbox: true },
-    { key: 'termShowExitCode', text: 'Terminal: show exit code', checkbox: true },
+    { key: 'termShowRunning', text: 'Terminal: show [running] line', checkbox: true, info: 'Blue ■ [running] + pink command' },
+    { key: 'termShowSuccess', text: 'Terminal: show [success]/[failed]', checkbox: true, info: 'Footer with time + exit code' },
+    { key: 'termShowCompileInfo', text: 'Popup legacy: [compile]', checkbox: true },
+    { key: 'termShowFilePath', text: 'Popup legacy: [file]', checkbox: true },
+    { key: 'termShowCommand', text: 'Popup legacy: [cmd]', checkbox: true },
+    { key: 'termShowRunBanner', text: 'Popup legacy: [run]', checkbox: true },
+    { key: 'termShowTiming', text: 'Popup legacy: timing', checkbox: true },
+    { key: 'termShowExitCode', text: 'Popup legacy: exit code', checkbox: true },
     { key: 'popupShowCompileInfo', text: 'Popup: show [compile]', checkbox: true },
     { key: 'popupShowFilePath', text: 'Popup: show [file]', checkbox: true },
     { key: 'popupShowCommand', text: 'Popup: show [cmd]', checkbox: true },

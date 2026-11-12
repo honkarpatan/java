@@ -9,6 +9,8 @@ export const defaultSettings = {
   runInClearScreen: true,
   enableInlineRunLogs: true,
   feedChipsInTerminal: false,
+  termShowRunning: true,
+  termShowSuccess: true,
   runShowTerminal: true,
   runToastResult: true,
   runPopupAutoHideMs: 5000,

@@ -133,6 +133,128 @@ function updateSideButtonBadge() {
   } catch (_) {}
 }
 
+
+/** Open file (if needed), jump to line:col, scroll into view, flash highlight. */
+async function goToProblem(fileUri, fileName, line1, column1) {
+  try {
+    hideProblemsPage();
+
+    let target = null;
+    const files = editorManager.files || [];
+    const baseName = (fileName || '').split('/').pop();
+    for (const f of files) {
+      if (!f) continue;
+      if (fileUri && (f.uri === fileUri || f.filename === fileUri)) {
+        target = f;
+        break;
+      }
+      if (baseName && (f.filename === baseName || f.name === baseName)) {
+        target = f;
+        break;
+      }
+      if (fileUri && f.uri && String(fileUri).includes('::')) {
+        const tail = String(fileUri).split('::').pop();
+        if (tail && f.uri && f.uri.indexOf(tail) >= 0) {
+          target = f;
+          break;
+        }
+      }
+    }
+
+    if (target) {
+      try {
+        target.makeActive?.();
+      } catch (_) {}
+    } else if (fileUri && fileUri !== 'untitled') {
+      try {
+        const openFile = acode.require('openFile');
+        if (typeof openFile === 'function') await openFile(fileUri);
+        else if (editorManager.openFile) await editorManager.openFile(fileUri);
+      } catch (openErr) {
+        console.warn('[JavaProblems] open', openErr);
+        toast('Open file manually: ' + (baseName || fileUri));
+      }
+    }
+
+    await new Promise(function (r) {
+      setTimeout(r, 220);
+    });
+
+    const editor = editorManager && editorManager.editor;
+    if (!editor) return;
+
+    const line = Math.max(1, line1 | 0);
+    const col = Math.max(0, (column1 | 0) - 1);
+
+    if (typeof editor.dispatch === 'function' && editor.state) {
+      try {
+        if (typeof editor.gotoLine === 'function') {
+          editor.gotoLine(line, col);
+        } else {
+          const doc = editor.state.doc;
+          const lineObj = doc.line(Math.min(line, doc.lines));
+          const pos = Math.min(lineObj.from + col, lineObj.to);
+          editor.dispatch({
+            selection: { anchor: pos, head: pos },
+            scrollIntoView: true,
+            effects: [],
+          });
+        }
+        // Flash line highlight via temporary selection of whole line
+        try {
+          const doc = editor.state.doc;
+          const lineObj = doc.line(Math.min(line, doc.lines));
+          editor.dispatch({
+            selection: { anchor: lineObj.from, head: lineObj.to },
+            scrollIntoView: true,
+          });
+          setTimeout(function () {
+            try {
+              const d = editor.state.doc;
+              const lo = d.line(Math.min(line, d.lines));
+              const p = Math.min(lo.from + col, lo.to);
+              editor.dispatch({ selection: { anchor: p, head: p } });
+            } catch (_) {}
+          }, 700);
+        } catch (_) {}
+        try {
+          editor.focus?.();
+        } catch (_) {}
+      } catch (e) {
+        console.warn('[JavaProblems] CM6 goto', e);
+      }
+    } else {
+      try {
+        if (editor.gotoLine) editor.gotoLine(line, col);
+        else if (editor.moveCursorToPosition) {
+          editor.moveCursorToPosition({ row: line - 1, column: col });
+        }
+        editor.focus?.();
+        // Ace highlight line
+        try {
+          const Range = window.ace?.require?.('ace/range')?.Range;
+          if (Range && editor.session) {
+            const marker = editor.session.addMarker(
+              new Range(line - 1, 0, line - 1, 1),
+              'java-problem-line-flash',
+              'fullLine'
+            );
+            setTimeout(function () {
+              try {
+                editor.session.removeMarker(marker);
+              } catch (_) {}
+            }, 900);
+          }
+        } catch (_) {}
+      } catch (e) {
+        console.warn('[JavaProblems] Ace goto', e);
+      }
+    }
+  } catch (err) {
+    console.error('[JavaProblems] goToProblem', err);
+  }
+}
+
 function hideProblemsPage() {
   if (!problemsPage) return;
   try {
@@ -237,11 +359,17 @@ function renderBody() {
     ' file' +
     (files === 1 ? '' : 's') +
     '</span></div>' +
+    '<button type="button" class="java-prob-search-toggle" title="Filter problems" aria-label="Filter">⌕</button>' +
     '<button type="button" class="java-prob-copy-btn java-prob-copy-all" title="Copy all problems" ' +
     (total ? '' : 'disabled') +
     '>' +
     COPY_SVG +
-    '</button></div>';
+    '</button></div>' +
+    '<div class="java-prob-search-bar" hidden>' +
+    '<input type="search" class="java-prob-search-input" placeholder="Filter problems…" />' +
+    '<span class="java-prob-search-count"></span>' +
+    '<button type="button" class="java-prob-search-clear" title="Clear filter">✕</button>' +
+    '</div>';
 
   if (!total) {
     html +=
@@ -307,9 +435,14 @@ function renderBody() {
         '>';
       (list || []).forEach(function (p, pi) {
         const tc = typeClass(p.type);
+        const fileLabel = String(key).split('/').pop() || key;
         html +=
           '<div class="java-problems-item ' +
           tc +
+          '" data-uri="' +
+          escapeAttr(key) +
+          '" data-name="' +
+          escapeAttr(fileLabel) +
           '" data-line="' +
           (p.line || 1) +
           '" data-col="' +
@@ -318,6 +451,8 @@ function renderBody() {
           fi +
           '" data-pi="' +
           pi +
+          '" data-msg="' +
+          escapeAttr(p.message || '') +
           '">' +
           '<button type="button" class="java-problems-item-goto" title="Go to problem">' +
           '<span class="java-problems-item-marker ' +
@@ -403,38 +538,129 @@ function renderBody() {
   });
 
   pageBody.querySelectorAll('.java-problems-item-goto').forEach(function (btn) {
-    btn.onclick = function () {
+    btn.onclick = function (e) {
+      try {
+        e && e.preventDefault && e.preventDefault();
+      } catch (_) {}
+      const sel = window.getSelection && window.getSelection();
+      if (sel && String(sel).length > 0) return;
       const row = btn.closest('.java-problems-item');
       if (!row) return;
+      const uri = row.getAttribute('data-uri') || '';
+      const name = row.getAttribute('data-name') || '';
       const line = parseInt(row.getAttribute('data-line') || '1', 10);
       const col = parseInt(row.getAttribute('data-col') || '1', 10);
-      try {
-        const ed = editorManager && editorManager.editor;
-        if (ed && ed.dispatch && ed.state) {
-          const doc = ed.state.doc;
-          const ln = doc.line(Math.min(Math.max(1, line), doc.lines));
-          const pos = ln.from + Math.max(0, col - 1);
-          ed.dispatch({ selection: { anchor: pos, head: pos }, scrollIntoView: true });
-        } else if (ed && ed.gotoLine) {
-          ed.gotoLine(line, Math.max(0, col - 1));
-        }
-        hideProblemsPage();
-      } catch (e) {
-        console.warn('[JavaProblems] goto', e);
-      }
+      goToProblem(uri, name, line, col);
     };
   });
+
+  bindSearchFilter();
 }
+
+let searchQuery = '';
+let searchOpen = false;
+
+function bindSearchFilter() {
+  if (!pageBody) return;
+  const toggle = pageBody.querySelector('.java-prob-search-toggle');
+  const bar = pageBody.querySelector('.java-prob-search-bar');
+  const input = pageBody.querySelector('.java-prob-search-input');
+  const clearBtn = pageBody.querySelector('.java-prob-search-clear');
+  if (!toggle || !bar || !input) return;
+
+  const applyFilter = function () {
+    const q = String(input.value || '').trim().toLowerCase();
+    searchQuery = q;
+    const items = pageBody.querySelectorAll('.java-problems-item');
+    let visible = 0;
+    items.forEach(function (el) {
+      const msg = (el.getAttribute('data-msg') || el.textContent || '').toLowerCase();
+      const name = (el.getAttribute('data-name') || '').toLowerCase();
+      const loc = (el.getAttribute('data-line') || '') + ':' + (el.getAttribute('data-col') || '');
+      const hit = !q || msg.indexOf(q) >= 0 || name.indexOf(q) >= 0 || loc.indexOf(q) >= 0;
+      el.style.display = hit ? '' : 'none';
+      el.classList.toggle('java-prob-search-hit', !!(hit && q));
+      if (hit) visible++;
+    });
+    // hide empty file groups
+    pageBody.querySelectorAll('.java-problems-file').forEach(function (g) {
+      const any = g.querySelector('.java-problems-item:not([style*="display: none"])');
+      g.style.display = any || !q ? '' : 'none';
+    });
+    const countEl = pageBody.querySelector('.java-prob-search-count');
+    if (countEl) {
+      countEl.textContent = q ? visible + ' match' + (visible === 1 ? '' : 'es') : '';
+    }
+  };
+
+  toggle.onclick = function (e) {
+    e.preventDefault();
+    e.stopPropagation();
+    searchOpen = !searchOpen;
+    if (searchOpen) {
+      bar.hidden = false;
+      bar.removeAttribute('hidden');
+      input.focus();
+      if (searchQuery) input.value = searchQuery;
+      applyFilter();
+    } else {
+      bar.hidden = true;
+      input.value = '';
+      searchQuery = '';
+      applyFilter();
+    }
+  };
+
+  if (clearBtn) {
+    clearBtn.onclick = function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      input.value = '';
+      searchQuery = '';
+      searchOpen = false;
+      bar.hidden = true;
+      applyFilter();
+    };
+  }
+
+  input.oninput = applyFilter;
+  input.onkeydown = function (e) {
+    if (e.key === 'Escape') {
+      input.value = '';
+      searchQuery = '';
+      searchOpen = false;
+      bar.hidden = true;
+      applyFilter();
+    }
+  };
+
+  if (searchOpen && searchQuery) {
+    bar.hidden = false;
+    input.value = searchQuery;
+    applyFilter();
+  }
+}
+
 
 function ensurePage() {
   if (problemsPage) return problemsPage;
   const backBtn = document.createElement('span');
   backBtn.className = 'icon arrow_back';
   backBtn.dataset.action = 'back';
-  backBtn.onclick = function () {
+  backBtn.style.cssText = 'pointer-events:auto;cursor:pointer;';
+  const onBack = function (e) {
+    try { e && e.preventDefault && e.preventDefault(); e && e.stopPropagation && e.stopPropagation(); } catch (_) {}
     hideProblemsPage();
   };
+  backBtn.onclick = onBack;
+  backBtn.addEventListener('click', onBack, true);
+  backBtn.addEventListener('touchend', onBack, true);
   problemsPage = Page('Java Problems', { lead: backBtn });
+  try {
+    problemsPage.addEventListener('click', function (e) {
+      if (e && e.target && e.target.closest && e.target.closest('[data-action="back"]')) onBack(e);
+    });
+  } catch (_) {}
   try {
     problemsPage.classList.add('java-problems-page');
   } catch (_) {}

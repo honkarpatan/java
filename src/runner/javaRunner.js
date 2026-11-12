@@ -43,11 +43,15 @@ function buildClasspath(settings) {
 function createRunScript({ fileName, code, fqn, packageName, className, mode, stdinText, settings }) {
   const isInline = mode === 'inline';
   const isPopup = mode === 'popup';
+  const isTerm = mode === 'terminal';
   const show = (tk, pk) => {
     if (isInline) return false;
     if (isPopup) return settings[pk] === true;
     return settings[tk] !== false;
   };
+  // Terminal banners (user-toggleable)
+  const showRunning = isTerm && settings.termShowRunning !== false;
+  const showSuccess = isTerm && settings.termShowSuccess !== false;
   const javac = settings.javacPath || 'javac';
   const java = settings.javaPath || 'java';
   const cp = buildClasspath(settings);
@@ -68,23 +72,61 @@ function createRunScript({ fileName, code, fqn, packageName, className, mode, st
   script += `echo '${toBase64(code)}' | base64 -d > "$SRC"\n`;
   if (stdinText) script += `echo '${toBase64(stdinText)}' | base64 -d > .stdin_payload\n`;
   script += 'START=$(date +%s 2>/dev/null || echo 0)\n';
-  if (show('termShowCompileInfo', 'popupShowCompileInfo')) script += `echo "[compile] ${javac}"\n`;
-  if (show('termShowFilePath', 'popupShowFilePath')) script += 'echo "[file] $SRC"\n';
-  if (show('termShowCommand', 'popupShowCommand')) script += `echo "[cmd] ${javac} -d classes $SRC"\n`;
+
+  // ── Meta banners (popup / legacy toggles) — not used in new terminal layout ──
+  if (!isTerm) {
+    if (show('termShowCompileInfo', 'popupShowCompileInfo')) script += `echo "[compile] ${javac}"\n`;
+    if (show('termShowFilePath', 'popupShowFilePath')) script += 'echo "[file] $SRC"\n';
+    if (show('termShowCommand', 'popupShowCommand')) script += `echo "[cmd] ${javac} -d classes $SRC"\n`;
+  }
+
+  // Compile
   script += `${shellEscape(javac)} -d classes -cp '${shellEscape(cp)}' "$SRC"\n`;
-  script += 'COMPILE=$?\nif [ "$COMPILE" -ne 0 ]; then echo "[compile failed] exit=$COMPILE"; echo JAVA_RUN_END; exit $COMPILE; fi\n';
+  script += 'COMPILE=$?\n';
+  script += 'if [ "$COMPILE" -ne 0 ]; then\n';
+  if (isTerm && showSuccess) {
+    script += '  END=$(date +%s 2>/dev/null || echo 0)\n';
+    script += '  echo -e "\\033[1;31m[failed]\\033[0m  took $((END-START))s  exit $COMPILE"\n';
+  } else if (!isTerm) {
+    script += '  echo "[compile failed] exit=$COMPILE"\n';
+  }
+  if (!isTerm) script += '  echo JAVA_RUN_END\n';
+  script += '  exit $COMPILE\n';
+  script += 'fi\n';
+
   const runCp = `classes${cp && cp !== '.' ? ':' + cp : ''}`;
-  if (show('termShowRunBanner', 'popupShowRunBanner')) script += 'echo "[run]"\n';
   const mainClass = fqn || className;
+  const displayCmd = javac + ' -d classes && ' + java + ' -cp classes ' + mainClass;
+  const safeDisplay = String(displayCmd).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+  if (isTerm && showRunning) {
+    // Blue square + [running] + pink/magenta command
+    script += 'echo -e "\\033[1;34m■\\033[0m \\033[1;34m[running]\\033[0m \\033[1;35m' + safeDisplay + '\\033[0m"\n';
+    } else if (!isTerm && show('termShowRunBanner', 'popupShowRunBanner')) {
+    script += 'echo "[run]"\n';
+  }
+
+  // Program stdout — reset color only in interactive terminal (avoid [0m in popup capture)
+  if (isTerm) script += 'echo -ne "\\033[0m"\n';
   if (stdinText) {
     script += `${shellEscape(java)} -cp '${shellEscape(runCp)}' '${shellEscape(mainClass)}' < .stdin_payload\n`;
   } else {
     script += `${shellEscape(java)} -cp '${shellEscape(runCp)}' '${shellEscape(mainClass)}'\n`;
   }
   script += 'EXIT=$?\nEND=$(date +%s 2>/dev/null || echo 0)\n';
-  if (show('termShowTiming', 'popupShowTiming')) script += 'echo "[time] $((END-START))s"\n';
-  if (show('termShowExitCode', 'popupShowExitCode')) script += 'echo "[exit $EXIT]"\n';
-  script += 'echo JAVA_RUN_END\nexit $EXIT\n';
+
+  if (isTerm && showSuccess) {
+    script += 'if [ "$EXIT" -eq 0 ]; then\n';
+    script += '  echo -e "\n\\033[1;32m[success]\\033[0m  \\033[1;36m took $((END-START))s  exit $EXIT \\033[0m"\n';
+    script += 'else\n';
+    script += '  echo -e "\n\\033[1;31m[failed]\\033[0m  \\033[1;36m took $((END-START))s  exit $EXIT \\033[0m"\n';
+    script += 'fi\n';
+  } else if (!isTerm) {
+    if (show('termShowTiming', 'popupShowTiming')) script += 'echo "[time] $((END-START))s"\n';
+    if (show('termShowExitCode', 'popupShowExitCode')) script += 'echo "[exit $EXIT]"\n';
+    script += 'echo JAVA_RUN_END\n';
+  }
+  script += 'exit $EXIT\n';
   return script;
 }
 
@@ -100,7 +142,15 @@ async function runViaExecutor(script) {
 }
 
 function stripMeta(out) {
-  return String(out || '').replace(/\r\n/g, '\n').replace(/JAVA_RUN_END[\s\S]*$/m, '').replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
+  return String(out || '')
+    .replace(/\r\n/g, '\n')
+    .replace(/JAVA_RUN_END[\s\S]*$/m, '')
+    // full CSI sequences
+    .replace(/\x1b\[[0-9;?]*[ -/]*[@-~]/g, '')
+    .replace(/\x1b\([A-B]/g, '')
+    // orphan fragments when ESC was lost: [0m  [1;32m
+    .replace(/\[(?:\d{1,3};)*\d{1,3}m/g, '')
+    .replace(/^\s+/, '');
 }
 
 export async function runJava(opts = {}) {
@@ -149,7 +199,16 @@ export async function runJava(opts = {}) {
 
   try {
     if (mode === 'terminal') {
-      await runInTerminal(`echo '${toBase64(script)}' | base64 -d | sh`, {
+      // CRITICAL: do NOT use `echo b64 | base64 -d | sh`.
+      // That attaches the script stream to sh's stdin; after the script is read,
+      // stdin is EOF — so Java Scanner.hasNextLine() is immediately false.
+      // Write the script to a file, then `sh file` so java inherits the real TTY.
+      const runnerPath = `/tmp/acode_java_run_${Date.now()}.sh`;
+      const bootstrap =
+        `echo '${toBase64(script)}' | base64 -d > '${runnerPath}' ` +
+        `&& chmod +x '${runnerPath}' ` +
+        `&& sh '${runnerPath}'`;
+      await runInTerminal(bootstrap, {
         clearScreen: settings.runInClearScreen !== false,
       });
       return toast('Running in terminal…', 1200);

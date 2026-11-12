@@ -1,10 +1,8 @@
 /**
  * deps/mavenClient.js — Maven Central search + jar download (Alpine/curl)
  */
-import { alpineExec, alpineExecScript, shellEscape, toBase64 } from '../utils/alpineExec.js';
+import { alpineExec, alpineExecScript, shellEscape } from '../utils/alpineExec.js';
 import { getSettings, updateSetting } from '../core/settings.js';
-
-const toast = acode.require('toast');
 
 export function defaultCacheDir() {
   return '/root/.acode-java-tools/m2';
@@ -28,9 +26,40 @@ export function mavenUrlForCoord(coord) {
   return `https://repo1.maven.org/maven2/${gPath}/${a}/${v}/${a}-${v}.jar`;
 }
 
+function normalizeDocs(docs) {
+  return (docs || [])
+    .map((d) => {
+      const g = d.g || '';
+      const a = d.a || '';
+      const v = d.latestVersion || d.v || '';
+      const id = d.id || `${g}:${a}:${v}`;
+      return {
+        id,
+        g,
+        a,
+        v,
+        text: `${g}:${a}:${v}`,
+        latestVersion: v,
+      };
+    })
+    .filter((x) => x.g && x.a && x.v);
+}
+
+async function fetchJsonWithTimeout(url, ms = 12000) {
+  const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), ms) : null;
+  try {
+    const res = await fetch(url, ctrl ? { signal: ctrl.signal } : undefined);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return await res.json();
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 /**
  * Search Maven Central (solrsearch).
- * @returns {Promise<Array<{ id, g, a, v, text }}>}
+ * Never hangs forever: 12s fetch timeout, then Alpine curl fallback (15s).
  */
 export async function searchMaven(query, rows = 12) {
   const q = String(query || '').trim();
@@ -40,45 +69,41 @@ export async function searchMaven(query, rows = 12) {
     encodeURIComponent(q) +
     `&rows=${rows}&wt=json`;
 
-  // Prefer fetch in WebView; fallback curl in Alpine
+  // 1) WebView fetch with timeout
   try {
-    const res = await fetch(url);
-    if (res.ok) {
-      const data = await res.json();
-      return normalizeDocs(data?.response?.docs || []);
-    }
+    const data = await fetchJsonWithTimeout(url, 12000);
+    const docs = normalizeDocs(data?.response?.docs || []);
+    if (docs.length) return docs;
   } catch (e) {
-    console.warn('[Maven] fetch failed, try curl', e);
+    console.warn('[Maven] fetch failed/timeout, try curl', e?.message || e);
   }
 
-  const script = `#!/bin/sh
-curl -fsSL '${shellEscape(url)}' 2>/dev/null || wget -qO- '${shellEscape(url)}' 2>/dev/null
-`;
-  const raw = await alpineExecScript(script);
+  // 2) Alpine curl/wget fallback
   try {
-    const data = JSON.parse(String(raw).replace(/^[\s\S]*?(\{)/, '$1'));
+    const script = `#!/bin/sh
+set +e
+URL='${shellEscape(url)}'
+if command -v curl >/dev/null 2>&1; then
+  curl -fsSL --max-time 15 "$URL" 2>/dev/null
+elif command -v wget >/dev/null 2>&1; then
+  wget -qO- --timeout=15 "$URL" 2>/dev/null
+else
+  echo '{"error":"no curl/wget"}'
+fi
+`;
+    const raw = await alpineExecScript(script);
+    const text = String(raw || '');
+    const jsonStart = text.indexOf('{');
+    if (jsonStart < 0) {
+      console.warn('[Maven] curl empty', text.slice(0, 120));
+      return [];
+    }
+    const data = JSON.parse(text.slice(jsonStart));
     return normalizeDocs(data?.response?.docs || []);
-  } catch (_) {
-    console.warn('[Maven] parse failed', String(raw).slice(0, 200));
+  } catch (e) {
+    console.warn('[Maven] alpine search failed', e);
     return [];
   }
-}
-
-function normalizeDocs(docs) {
-  return (docs || []).map((d) => {
-    const g = d.g || '';
-    const a = d.a || '';
-    const v = d.latestVersion || d.v || '';
-    const id = d.id || `${g}:${a}:${v}`;
-    return {
-      id,
-      g,
-      a,
-      v,
-      text: `${g}:${a}:${v}`,
-      latestVersion: v,
-    };
-  }).filter((x) => x.g && x.a && x.v);
 }
 
 /**
@@ -101,7 +126,7 @@ if [ -f '${shellEscape(jar)}' ] && [ -s '${shellEscape(jar)}' ]; then
 fi
 echo "Downloading ${shellEscape(c)}..."
 if command -v curl >/dev/null 2>&1; then
-  curl -fL --retry 2 -o '${shellEscape(jar)}' '${shellEscape(url)}'
+  curl -fL --retry 2 --max-time 60 -o '${shellEscape(jar)}' '${shellEscape(url)}'
 elif command -v wget >/dev/null 2>&1; then
   wget -O '${shellEscape(jar)}' '${shellEscape(url)}'
 else
@@ -120,7 +145,6 @@ fi
     throw new Error('Download failed: ' + String(out).slice(0, 120));
   }
 
-  // pin in settings
   let list = [];
   try {
     list = JSON.parse(getSettings().mavenCoordinates || '[]');
