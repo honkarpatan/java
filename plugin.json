@@ -1,0 +1,19 @@
+{
+  "id": "acode.plugin.javatools",
+  "name": "Java",
+  "main": "dist/main.js",
+  "version": "0.1.0",
+  "readme": "readme.md",
+  "icon": "icon.png",
+  "license": "Propriatory", 
+  "files": [],
+  "keywords": ["java", "javac", "runner", "lsp", "jdtls", "scanner", "maven"],
+  "price": 49,
+  "minVersionCode": 290,
+  "author": {
+    "name": "Dev. Sourav",
+    "email": "",
+    "url": "",
+    "github": ""
+  }
+}
