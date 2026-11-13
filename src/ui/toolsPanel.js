@@ -23,7 +23,7 @@ const TOOL_ACTIONS = [
   ['organize', 'Organize imports'],
   ['autoImport', 'Auto import (stdlib only)'],
   ['gotoDef', 'Go to Definition'],
-  ['findRefs', 'Find References'],
+  ['findRefs', 'Go to References'],
   ['deps', 'Dependencies / JDK…'],
   ['problems', 'Open Problems'],
 ];

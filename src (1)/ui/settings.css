@@ -1,0 +1,209 @@
+/**
+ * settings.css — Java Tools category pages
+ * Same design as C/C++ Tools: theme CSS variables, section card, switches, select chips.
+ */
+
+.java-tools-settings-body {
+  box-sizing: border-box;
+  height: 100%;
+  overflow: auto;
+  padding: 0.65rem 0 1.5rem;
+  background: var(--primary-color, inherit);
+  color: var(--primary-text-color, inherit);
+  -webkit-overflow-scrolling: touch;
+}
+
+.java-tools-settings-body .settings-section {
+  margin: 0;
+  padding: 0 0.65rem;
+}
+
+.java-tools-settings-body .settings-section-card {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--secondary-color, #2a2a2a), var(--popup-background-color, transparent) 28%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  border-radius: 0.45rem;
+}
+
+.java-tools-settings-body .settings-section-card > .list-item {
+  box-sizing: border-box;
+  cursor: pointer;
+  background: transparent;
+  align-items: center;
+  width: 100%;
+  min-height: 3.2rem;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  display: flex;
+  gap: 0.35rem;
+  color: inherit;
+  border: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.java-tools-settings-body .settings-section-card > .list-item:not(:last-of-type) {
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color, #555), transparent 20%);
+}
+
+.java-tools-settings-body .settings-section-card > .list-item:active {
+  background: color-mix(in srgb, var(--active-color, rgba(127, 127, 127, 0.18)), transparent 40%);
+}
+
+.java-tools-settings-body .list-item > .icon.no-icon {
+  display: none;
+  width: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.java-tools-settings-body .list-item .container {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.15rem;
+}
+
+.java-tools-settings-body .list-item .container .text {
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--primary-text-color, inherit);
+}
+
+.java-tools-settings-body .list-item .container .value.setting-info,
+.java-tools-settings-body .list-item .container small.setting-info {
+  font-size: 0.78rem;
+  line-height: 1.3;
+  opacity: 0.72;
+  color: var(--secondary-text-color, var(--primary-text-color, inherit));
+}
+
+.java-tools-settings-body .list-item .setting-tail {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.5rem;
+}
+
+.java-tools-settings-body .setting-value-display.is-select {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  min-width: max(6.75rem, min(30vw, 8.5rem));
+  max-width: min(45vw, 11.5rem);
+  min-height: 2.35rem;
+  padding: 0 0.8rem 0 0.95rem;
+  border-radius: 0.56rem;
+  border: 1px solid color-mix(in srgb, var(--border-color, #555), transparent 12%);
+  background: color-mix(in srgb, var(--secondary-color, #333), var(--popup-background-color, #222) 42%);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--border-color, #555), transparent 44%),
+    0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.java-tools-settings-body .setting-trailing-value.is-select {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  opacity: 0.92;
+}
+
+.java-tools-settings-body .setting-value-icon {
+  flex-shrink: 0;
+  font-size: 1.1rem;
+  opacity: 0.7;
+}
+
+.java-tools-settings-body .setting-value-display:not(.is-select) {
+  display: inline-flex;
+  align-items: center;
+  max-width: min(42vw, 10rem);
+}
+
+.java-tools-settings-body .setting-trailing-value:not(.is-select) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  opacity: 0.75;
+  text-align: right;
+}
+
+.java-tools-settings-body .settings-chevron {
+  font-size: 1.15rem;
+  opacity: 0.55;
+}
+
+/* Switch — same as C++ / Acode */
+.java-tools-settings-body label.input-checkbox.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  margin: 0;
+  user-select: none;
+}
+
+.java-tools-settings-body label.input-checkbox.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.java-tools-settings-body label.input-checkbox.switch .box {
+  position: relative;
+  display: inline-block;
+  box-sizing: border-box;
+  height: 1.3rem !important;
+  width: 2.3rem !important;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-color, #666), transparent 10%);
+  border: 1px solid color-mix(in srgb, var(--border-color, #555), transparent 30%);
+  transition: background 0.15s ease;
+}
+
+.java-tools-settings-body label.input-checkbox.switch .box .handle {
+  position: absolute;
+  top: 50%;
+  left: 0.15rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transform: translate3d(0, -50%, 0);
+  transition: transform 0.15s ease;
+}
+
+.java-tools-settings-body label.input-checkbox.switch input:checked + .box {
+  background: color-mix(in srgb, var(--button-background-color, #4caf50), transparent 15%);
+  border-color: transparent;
+}
+
+.java-tools-settings-body label.input-checkbox.switch input:checked + .box .handle {
+  transform: translate3d(1.05rem, -50%, 0);
+}
+
+.java-tools-settings-body .list-item.has-tail-select .setting-tail,
+.java-tools-settings-body .list-item.has-tail-value .setting-tail {
+  max-width: 55%;
+}
+
+/* Page chrome when opened as detail */
+.detail-settings-page.java-tools-settings-page,
+.java-tools-settings-page {
+  background: var(--primary-color, inherit);
+  color: var(--primary-text-color, inherit);
+}

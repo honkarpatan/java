@@ -90,6 +90,29 @@ function getLoopPackage(s) {
   return null;
 }
 
+
+function formatChipPreview(pack, site) {
+  const settings = getSettings();
+  let max = parseInt(settings.chipPreviewValues, 10);
+  if (!Number.isFinite(max)) max = 5;
+  max = Math.min(10, Math.max(1, max));
+  const vals = [];
+  const data = pack && Array.isArray(pack.data) ? pack.data : [];
+  for (let i = 0; i < data.length; i++) {
+    const row = asSlotArray(data[i]);
+    if (!row) continue;
+    // multi-slot row → join with space inside one token group
+    vals.push(row.length > 1 ? row.join(',') : row[0]);
+  }
+  if (!vals.length) {
+    const rounds = (pack && pack.rounds) || (site && site.loopRounds) || 0;
+    return rounds > 1 ? ('↻' + rounds + ' ▸') : 'input ▸';
+  }
+  const shown = vals.slice(0, max);
+  const more = vals.length > max ? ' …' : '';
+  return vals.length + ': ' + shown.join(' ') + more;
+}
+
 export function hasAllInputValues(file) {
   const map = valueStore.get(fileKey(file || editorManager?.activeFile));
   const sites = findInputSites(readActiveCode());
@@ -269,11 +292,19 @@ function placeChipsCm6(editor, sites, key) {
       const pack = getLoopPackage(this.value);
       const filled = !!(pack || asSlotArray(this.value));
       el.className = 'cm-java-input-chip' + (filled ? ' filled' : ' empty');
-      el.textContent = pack
-        ? `↻${pack.rounds}: ${(pack.data[0] || [])[0] || '…'}`
-        : filled
-          ? `in: ${asSlotArray(this.value)[0]}`
-          : (this.site.loopRounds > 1 ? `↻${this.site.loopRounds} ▸` : 'input ▸');
+      if (pack) {
+        el.textContent = formatChipPreview(pack, this.site);
+        el.title = formatChipPreview(
+          { rounds: pack.rounds, data: pack.data },
+          this.site
+        );
+      } else if (filled) {
+        el.textContent = 'in: ' + asSlotArray(this.value).join(' ');
+      } else {
+        el.textContent = this.site.loopRounds > 1
+          ? ('↻' + this.site.loopRounds + ' ▸')
+          : 'input ▸';
+      }
       el.style.cssText = 'margin-left:0.45em;font-size:10px;padding:1px 6px;border-radius:10px;cursor:pointer;';
       let last = 0;
       const open = (e) => {

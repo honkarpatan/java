@@ -373,7 +373,7 @@ function inputList() {
     { key: 'enableInputChips', text: 'Enable input chips', checkbox: true },
     { key: 'clearInputOnType', text: 'Clear input on type', checkbox: true },
     { key: 'maxLoopInputs', text: 'Max inputs in loop', value: val('maxLoopInputs'), promptType: 'number' },
-    { key: 'chipPreviewValues', text: 'Chip preview value count', value: val('chipPreviewValues'), promptType: 'number' },
+    { key: 'chipPreviewValues', text: 'Chip preview values (1–10)', value: val('chipPreviewValues'), promptType: 'number', info: 'Default 5 — how many loop values show on the chip' },
     { key: 'blockRunWithoutInputs', text: 'Block popup/inline if inputs missing', checkbox: true },
   ];
 }
@@ -424,7 +424,7 @@ function lspList() {
     { key: 'enableLspCompletion', text: 'LSP completion', checkbox: true },
     { key: 'enableHover', text: 'Hover', checkbox: true },
     { key: 'enableGoToDefinition', text: 'Go to definition', checkbox: true },
-    { key: 'enableFindReferences', text: 'Find references', checkbox: true },
+    { key: 'enableFindReferences', text: 'Go to references (peek)', checkbox: true },
     { key: 'enableRename', text: 'Rename', checkbox: true },
     { key: 'enableInlayHints', text: 'Inlay hints', checkbox: true },
   ];

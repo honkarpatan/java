@@ -486,3 +486,21 @@
   position: absolute;
   background: rgba(255, 213, 79, 0.28);
 }
+
+
+/* Inline run logs */
+.cm-java-inline-log {
+  opacity: 0.85;
+  font-style: italic;
+  color: #80cbc4;
+}
+.cm-java-inline-log-block {
+  display: block;
+  padding: 2px 0 4px 1.2em;
+  margin: 1px 0 4px;
+  border-left: 2px solid rgba(128, 203, 196, 0.45);
+}
+.cm-java-inline-log-block .cm-java-inline-log {
+  line-height: 1.35;
+  white-space: pre;
+}

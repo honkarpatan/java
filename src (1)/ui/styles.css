@@ -1,0 +1,488 @@
+/* Java Tools — base styles */
+
+/* Problems page (C++ Tools parity) */
+.java-problems-body {
+  padding: 0;
+  height: 100%;
+  overflow: auto;
+  background: var(--secondary-color, var(--popup-background-color, #1e1e1e));
+  color: var(--primary-text-color, #e8e8e8);
+  -webkit-font-smoothing: antialiased;
+}
+
+.java-problems-root {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  min-height: 100%;
+}
+
+/* Toolbar / summary strip */
+.java-problems-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--primary-color, var(--popup-background-color, #252526));
+  border-bottom: 1px solid var(--border-color, rgba(128, 128, 128, 0.35));
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.java-problems-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Copy icons (all / section / single) */
+.java-prob-copy-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--secondary-text-color, rgba(232, 232, 232, 0.55));
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.java-prob-copy-btn:hover,
+.java-prob-copy-btn:focus-visible {
+  color: var(--primary-text-color, #e8e8e8);
+  background: color-mix(in srgb, var(--primary-text-color, #fff) 10%, transparent);
+}
+.java-prob-copy-btn:active {
+  opacity: 0.7;
+}
+.java-prob-copy-btn:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+.java-prob-copy-btn svg {
+  display: block;
+}
+
+.java-prob-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4em;
+  height: 1.4em;
+  padding: 0 5px;
+  border-radius: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  background: var(--active-color, rgba(128, 128, 128, 0.2));
+  color: var(--primary-text-color, inherit);
+}
+
+.java-prob-count.java-prob-error {
+  color: var(--danger-color, var(--error-text-color, #f48771));
+  background: color-mix(in srgb, var(--danger-color, #f48771) 18%, transparent);
+}
+
+.java-prob-count.java-prob-warning {
+  color: var(--warning-color, var(--warning-text-color, #cca700));
+  background: color-mix(in srgb, var(--warning-color, #cca700) 18%, transparent);
+}
+
+.java-prob-count.java-prob-info {
+  color: var(--active-color, var(--link-text-color, #3794ff));
+  background: color-mix(in srgb, var(--active-color, #3794ff) 18%, transparent);
+}
+
+.java-prob-count-label {
+  color: var(--secondary-text-color, rgba(232, 232, 232, 0.65));
+  font-size: 11px;
+  font-weight: 400;
+}
+
+/* Empty state */
+.java-problems-empty {
+  text-align: center;
+  padding: 40px 16px;
+  color: var(--secondary-text-color, rgba(232, 232, 232, 0.55));
+}
+
+.java-problems-empty-icon {
+  font-size: 28px;
+  margin-bottom: 6px;
+  color: var(--active-color, #66bb6a);
+  opacity: 0.85;
+}
+
+.java-problems-empty-hint {
+  font-size: 11px;
+  margin-top: 6px;
+  opacity: 0.8;
+}
+
+/* Tree */
+.java-problems-tree {
+  padding: 2px 0 12px;
+}
+
+.java-problems-file {
+  margin: 0;
+  border: none;
+  background: transparent;
+}
+
+/* File bar: collapse header + section copy */
+.java-problems-file-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+}
+
+/* File row — disclosure header */
+.java-problems-file-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 3px 4px 3px 4px;
+  border: none;
+  background: transparent;
+  color: var(--primary-text-color, inherit);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.java-problems-file-header:hover,
+.java-problems-file-header:focus-visible {
+  background: var(--active-color, rgba(128, 128, 128, 0.15));
+  outline: none;
+}
+
+/* Twistie (▶ / ▼) */
+.java-problems-twist {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.75;
+  transition: transform 0.12s ease;
+}
+
+.java-problems-twist::before {
+  content: '';
+  display: block;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 4px 0 4px 6px;
+  border-color: transparent transparent transparent var(--primary-text-color, #ccc);
+  transform: rotate(90deg);
+}
+
+.java-problems-twist.is-collapsed::before {
+  transform: rotate(0deg);
+}
+
+/* File icon (simple folder/file mark) */
+.java-problems-file-icon {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+  background:
+    linear-gradient(var(--primary-text-color, #ccc), var(--primary-text-color, #ccc)) center 3px / 10px 1px no-repeat,
+    linear-gradient(var(--primary-text-color, #ccc), var(--primary-text-color, #ccc)) center 7px / 10px 1px no-repeat,
+    linear-gradient(var(--primary-text-color, #ccc), var(--primary-text-color, #ccc)) center 11px / 7px 1px no-repeat;
+}
+
+.java-problems-file-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--primary-text-color, inherit);
+}
+
+.java-problems-file-counts {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.java-prob-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25em;
+  height: 1.25em;
+  padding: 0 4px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.java-prob-pill.java-prob-error {
+  color: var(--danger-color, #f48771);
+  background: color-mix(in srgb, var(--danger-color, #f48771) 16%, transparent);
+}
+
+.java-prob-pill.java-prob-warning {
+  color: var(--warning-color, #cca700);
+  background: color-mix(in srgb, var(--warning-color, #cca700) 16%, transparent);
+}
+
+.java-prob-pill.java-prob-info {
+  color: var(--active-color, #3794ff);
+  background: color-mix(in srgb, var(--active-color, #3794ff) 16%, transparent);
+}
+
+/* Problem rows */
+.java-problems-list {
+  display: flex;
+  flex-direction: column;
+  padding: 0 0 2px 18px; /* indent under file, DevTools-like */
+}
+
+.java-problems-list[hidden] {
+  display: none !important;
+}
+
+.java-problems-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  margin: 0;
+  padding: 1px 4px 1px 2px;
+  border: none;
+  border-left: 2px solid transparent;
+  background: transparent;
+  color: var(--primary-text-color, inherit);
+  font: inherit;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.java-problems-item-goto {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 2px 6px 2px 4px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.java-problems-item-goto:hover,
+.java-problems-item-goto:focus-visible {
+  background: var(--active-color, rgba(128, 128, 128, 0.12));
+  outline: none;
+}
+
+.java-problems-item .java-prob-copy-btn {
+  margin-top: 1px;
+  opacity: 0.5;
+}
+.java-problems-item:hover .java-prob-copy-btn,
+.java-problems-item:focus-within .java-prob-copy-btn {
+  opacity: 1;
+}
+
+/* Selectable error text on the page */
+.java-problems-item-msg,
+.java-problems-item-loc,
+.java-problems-file-name,
+.user-select-text {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+.java-problems-item.java-prob-error {
+  border-left-color: var(--danger-color, #f48771);
+}
+
+.java-problems-item.java-prob-warning {
+  border-left-color: var(--warning-color, #cca700);
+}
+
+.java-problems-item.java-prob-info {
+  border-left-color: var(--active-color, #3794ff);
+}
+
+/* Severity marker (small filled square) */
+.java-problems-item-marker {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
+  border-radius: 1px;
+  background: var(--secondary-text-color, #888);
+}
+
+.java-problems-item-marker.java-prob-error {
+  background: var(--danger-color, #f48771);
+}
+
+.java-problems-item-marker.java-prob-warning {
+  background: var(--warning-color, #cca700);
+}
+
+.java-problems-item-marker.java-prob-info {
+  background: var(--active-color, #3794ff);
+}
+
+.java-problems-item-msg {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  color: var(--primary-text-color, inherit);
+}
+
+.java-problems-item-loc {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--secondary-text-color, rgba(232, 232, 232, 0.55));
+  font-size: 11px;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.java-problems-item.java-prob-error .java-problems-item-loc {
+  color: color-mix(in srgb, var(--danger-color, #f48771) 70%, var(--secondary-text-color, #888));
+}
+
+.java-problems-item.java-prob-warning .java-problems-item-loc {
+  color: color-mix(in srgb, var(--warning-color, #cca700) 70%, var(--secondary-text-color, #888));
+}
+
+
+
+/* ── Dependencies page ── */
+.java-deps-page .java-deps-btn,
+.java-deps-body .java-deps-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  border: 1px solid rgba(127, 127, 127, 0.4);
+  border-radius: 3px !important;
+  background: rgba(127, 127, 127, 0.12);
+  color: inherit;
+}
+.java-deps-page .java-deps-btn.primary,
+.java-deps-body .java-deps-btn.primary {
+  background: rgba(33, 150, 243, 0.22);
+  border-color: rgba(33, 150, 243, 0.55);
+}
+.java-deps-page input[type="search"],
+.java-deps-body input[type="search"] {
+  border-radius: 3px !important;
+}
+.java-deps-status {
+  border-radius: 3px !important;
+}
+
+.java-deps-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.java-deps-results {
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: 45vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid rgba(127, 127, 127, 0.2);
+  border-radius: 3px;
+  padding: 4px 8px;
+  margin-top: 8px;
+}
+
+
+/* Problems search filter */
+.java-prob-search-toggle {
+  border: 1px solid rgba(127,127,127,.35);
+  background: rgba(127,127,127,.12);
+  color: inherit;
+  border-radius: 3px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  margin-right: 4px;
+}
+.java-prob-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(127,127,127,.2);
+}
+.java-prob-search-bar[hidden] {
+  display: none !important;
+}
+.java-prob-search-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 10px;
+  border-radius: 3px;
+  border: 1px solid rgba(127,127,127,.35);
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+}
+.java-prob-search-count {
+  font-size: 11px;
+  opacity: 0.7;
+  white-space: nowrap;
+}
+.java-prob-search-clear {
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 3px;
+}
+.java-problems-item.java-prob-search-hit {
+  outline: 1px solid rgba(255, 193, 7, 0.55);
+  background: rgba(255, 193, 7, 0.08);
+}
+.java-problem-line-flash {
+  position: absolute;
+  background: rgba(255, 213, 79, 0.28);
+}

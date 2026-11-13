@@ -36,6 +36,12 @@ export function getSettings() {
 }
 
 export function updateSetting(key, val) {
+  if (key === 'chipPreviewValues') {
+    let n = parseInt(val, 10);
+    if (!Number.isFinite(n)) n = 5;
+    val = Math.min(10, Math.max(1, n));
+  }
+
   const s = ensureSettings();
   s[key] = val;
   appSettings.update();
